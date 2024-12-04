@@ -156,11 +156,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="inc\App.h" />
+    <ClInclude Include="inc\application.h" />
     <ClInclude Include="inc\framework.h" />
+    <ClInclude Include="inc\Gdc.h" />
     <ClInclude Include="inc\pch.h" />
+    <ClInclude Include="inc\utility.h" />
+    <ClInclude Include="inc\View.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\analyze.cpp" />
     <ClCompile Include="src\App.cpp" />
+    <ClCompile Include="src\Gdc.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -168,6 +174,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="src\View.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,25 +1,24 @@
 /*******************************************************************************
- * File : main.cpp
- * Breif : アプリケーションのエントリーポイントを定義します。
+ * File : utility.cpp
+ * Breif : ユーティリティ関連のソースファイルです。
  * Copyright (c) 2024 mikan-orange
  * This software is released under the MIT License, see LICENSE.
  ******************************************************************************/
+
+#pragma once
 
 // -----------------------------------------------------------------------------
 // Includes
 // -----------------------------------------------------------------------------
 
-#include <pch.h>
-#include "App.h"
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif//defined(DEBUG) || defined(_DEBUG)
+#include "pch.h"
+#include "stdarg.h"
 
 // -----------------------------------------------------------------------------
 // Definitions
 // -----------------------------------------------------------------------------
+
+#define DBG_LEN	128	// デバッグ出力バッファの長さ
 
 // -----------------------------------------------------------------------------
 // Declarations
@@ -29,30 +28,16 @@
 // Functions
 // -----------------------------------------------------------------------------
 
-// @brief アプリケーションのエントリーポイントです。
-// @param argc 未使用
-// @param argv 未使用
-// @param envp 未使用
-// @return 実行結果(0固定)
-int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
-	UNREFERENCED_PARAMETER(argc);
-	UNREFERENCED_PARAMETER(argv);
-	UNREFERENCED_PARAMETER(envp);
-
 #if defined(DEBUG) || defined(_DEBUG)
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif//defined(DEBUG) || defined(_DEBUG)
-
-	// Appクラスのオブジェクトを生成します。
-	App* pApp = new App;
-	if (pApp) {
-		// 初期化処理の後に実行します。
-		if (pApp->Init()) {
-			pApp->Run();
-		}
-		// オブジェクトを削除します。
-		delete pApp;
-	}
-
-	return 0;
+// @brief デバッグ出力関数です。
+// @param format フォーマット文
+// @param ... 可変個の引数
+void debugprintf(const char* format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	char str[DBG_LEN] = {};
+	vsprintf_s(str, format, ap);
+	cout << str;
+	va_end(ap);
 }
+#endif

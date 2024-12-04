@@ -1,0 +1,417 @@
+/*******************************************************************************
+ * File : View.cpp
+ * Breif : Viewクラスのソースファイルです。
+ * Copyright (c) 2024 mikan-orange
+ * This software is released under the MIT License, see LICENSE.
+ ******************************************************************************/
+
+#pragma once
+
+// -----------------------------------------------------------------------------
+// Includes
+// -----------------------------------------------------------------------------
+#include "pch.h"
+#include "View.h"
+
+// -----------------------------------------------------------------------------
+// Definitions
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Declarations
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Functions
+// -----------------------------------------------------------------------------
+
+// @brief Viewクラスのインストラクタです。
+View::View() :
+	pGdc(), bRedraw(TRUE), dpi(), len(), bx(), by(), cursor_x(), cursor_y() {
+	ZeroMemory(rectCell, sizeof(rectCell));
+	ZeroMemory(table, sizeof(table));
+	for (int j = 0; j < 9; j++) {
+		for (int i = 0; i < 9; i++) {
+			bittable[j][i] = FULLBIT;
+		}
+	}
+}
+
+// @brief Viewクラスのデストラクタです。
+View::~View() {
+	if (pGdc) {
+		delete pGdc;
+		pGdc = nullptr;
+	}
+}
+
+// @brief WM_CREATEのメッセージハンドラです。
+// @brief hWnd ウィンドウハンドル
+// @return 0:正常終了/-1:異常終了
+int View::OnCreate(HWND hWnd) {
+	// DPIを取得します。
+	dpi = GetDpiForWindow(hWnd);
+	// Gdcクラスのオブジェクトを生成します。
+	pGdc = new Gdc();
+	int ret = -1;	// 異常終了
+	if (pGdc) {
+		ret =  pGdc->Init(hWnd);
+	}
+	return ret;
+}
+
+// @brief WM_SIZINGのメッセージハンドラです。
+// @brief hWnd ウィンドウハンドル
+// @brief pRect RECTへのポインタ
+void View::OnSizing(HWND hWnd, RECT* pRect) {
+	RECT window = {};
+	GetWindowRect(hWnd, &window);
+	int cxOld = window.right - window.left;
+	int cyOld = window.bottom - window.top;
+	int cx = pRect->right - pRect->left;
+	int cy = pRect->bottom - pRect->top;
+	// 縦横の比率を変化させません。
+	if (abs(cx - cxOld) > abs(cy - cyOld)) {
+		cx = cy * DEFAULT_WIDTH / DEFAULT_HEIGHT;
+		pRect->right = pRect->left + cx;
+	}
+	else {
+		cy = cx * DEFAULT_HEIGHT / DEFAULT_WIDTH;
+		pRect->bottom = pRect->top + cy;
+	}
+}
+
+// @brief WM_SIZEのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+void View::OnSize(HWND hWnd) {
+	bRedraw |= TRUE;	// 再描画が必要です。
+	InvalidateRect(hWnd, nullptr, FALSE);
+}
+
+// @brief WM_DPI_CHANGEDのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param newdpi 新しいDPI
+// @param pRect 新しい座標のRECTへのポインタ
+void  View::OnDpiChanged(HWND hWnd, int newdpi, RECT* pRect) {
+	bRedraw |= TRUE;	// 再描画が必要です。
+	InvalidateRect(hWnd, nullptr, FALSE);
+	dpi = newdpi;
+	SetWindowPos(hWnd, hWnd, pRect->left, pRect->top,
+		pRect->right - pRect->left, pRect->bottom - pRect->top,
+		SWP_NOACTIVATE | SWP_NOZORDER);
+}
+
+// @brief WM_LBUTTONDOWNのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param keys 同時に押されているキーのフラグ
+// @param x, y 座標
+void View::OnLButtonDown(HWND hWnd, int keys, int x, int y) {
+	UNREFERENCED_PARAMETER(hWnd);
+	UNREFERENCED_PARAMETER(keys);
+	UNREFERENCED_PARAMETER(x);
+	UNREFERENCED_PARAMETER(y);
+}
+
+// @brief WM_RBUTTONDOWNのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param keys 同時に押されているキーのフラグ
+// @param x, y 座標
+void View::OnRButtonDown(HWND hWnd, int keys, int x, int y) {
+	UNREFERENCED_PARAMETER(hWnd);
+	UNREFERENCED_PARAMETER(keys);
+	UNREFERENCED_PARAMETER(x);
+	UNREFERENCED_PARAMETER(y);
+}
+
+// @brief WM_KEYNDOWNのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param key 仮想キーコード
+void View::OnKeyDown(HWND hWnd, int key) {
+	UNREFERENCED_PARAMETER(hWnd);
+	UNREFERENCED_PARAMETER(key);
+
+	switch (key) {
+	case VK_LEFT:
+		if ((table[cursor_y][cursor_x] >= 0) && (cursor_x > 0)) {
+			cursor_x--;
+			bRedraw = TRUE;
+		}
+		break;
+	case VK_UP:
+		if ((table[cursor_y][cursor_x] >= 0) && (cursor_y > 0)) {
+			cursor_y--;
+			bRedraw = TRUE;
+		}
+		break;
+	case VK_RIGHT:
+		if ((table[cursor_y][cursor_x] >= 0) && (cursor_x < 8)) {
+			cursor_x++;
+			bRedraw = TRUE;
+		}
+		break;
+	case VK_DOWN:
+		if ((table[cursor_y][cursor_x] >= 0) && (cursor_y < 8)) {
+			cursor_y++;
+			bRedraw = TRUE;
+		}
+		break;
+	case VK_NUMPAD0:
+	case VK_NUMPAD1:
+	case VK_NUMPAD2:
+	case VK_NUMPAD3:
+	case VK_NUMPAD4:
+	case VK_NUMPAD5:
+	case VK_NUMPAD6:
+	case VK_NUMPAD7:
+	case VK_NUMPAD8:
+	case VK_NUMPAD9:
+		{
+			int num = key - VK_NUMPAD0;
+			bRedraw |= SetNumber(num);
+		}
+		break;
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		{
+			int num = key - '0';
+			bRedraw |= SetNumber(num);
+		}
+		break;
+	}
+	if (bRedraw) {
+		InvalidateRect(hWnd, nullptr, FALSE);
+	}
+}
+
+// @brief WM_PAINTのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::OnPaint(HWND hWnd, HDC hdc) {
+	if (bRedraw) {
+		// バッファに描画します。
+		Draw(hWnd, hdc);
+		bRedraw = FALSE;
+	}
+	// バッファの内容を画面に表示します。
+	pGdc->Render(hWnd, hdc);
+}
+
+// @brief バッファに描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::Draw(HWND hWnd, HDC hdc) {
+	RECT client = {};
+	GetClientRect(hWnd, &client);
+
+	// 位置を計算します。
+	CalcPosition(hWnd, &client);
+
+	// 背景を塗ります。
+	DrawBackGround(hWnd, hdc);
+
+	// マスを描画します。
+	DrawCells(hWnd, hdc);
+
+	// 枠線を描画します。
+	DrawFrame(hWnd, hdc);
+
+	// カーソルを描画します。
+	DrawCursor(hWnd, hdc);
+}
+
+// @brief 位置を計算します。
+// @param hWnd ウィンドウハンドル
+void View::CalcPosition(HWND hWnd, RECT *pRect) {
+	UNREFERENCED_PARAMETER(hWnd);
+	bx = 0;
+	by = 0;
+	int cx = pRect->right - pRect->left;
+	int cy = pRect->bottom - pRect->top;
+	if (cx < cy) {
+		cy = cx * DEFAULT_HEIGHT / DEFAULT_WIDTH;
+		by = (pRect->bottom - cy) / 2;
+	}
+	else {
+		cx = cy * DEFAULT_WIDTH / DEFAULT_HEIGHT;
+		bx = (pRect->right - cx) / 2;
+	}
+	len = cy / 10;
+	for (int j = 0; j < 9; j++) {
+		for (int i = 0; i < 9; i++) {
+			rectCell[j][i].left = bx + len / 2 + len * i;
+			rectCell[j][i].top = by + len / 2 + len * j;
+			rectCell[j][i].right = bx + len / 2 + len * (i + 1);
+			rectCell[j][i].bottom = by + len / 2 + len * (j + 1);
+		}
+	}
+}
+
+// @brief 背景を塗ります。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::DrawBackGround(HWND hWnd, HDC hdc) {
+	UNREFERENCED_PARAMETER(hdc);
+	RECT client;
+	GetClientRect(hWnd, &client);
+	pGdc->FillBox(hWnd, &client, RGB_WINBK);
+}
+
+// @brief マスを描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::DrawCells(HWND hWnd, HDC hdc) {
+	if (pGdc->CreateFonts(hWnd, len)) {
+		for (int j = 0; j < 9; j++) {
+			for (int i = 0; i < 9; i++) {
+				if (table[j][i]) {
+					// 大きい数字を描画します。
+					DrawCellsBigNumber(hWnd, hdc, i, j);
+				}
+				else {
+					// 小さい数字を描画します。
+					DrawCellsSmallNumbers(hWnd, hdc, i, j);
+				}
+			}
+		}
+	}
+	else {
+		DestroyWindow(hWnd);
+	}
+}
+
+// @brief マスに大きな数字を描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCハンドル
+// @param x, y 座標
+void View::DrawCellsBigNumber(HWND hWnd, HDC hdc, int x, int y) {
+	UNREFERENCED_PARAMETER(hdc);
+	int num = table[y][x];
+	int numCur = table[cursor_y][cursor_x];
+	COLORREF colorBk = RGB_NORMAL;
+	// 背景色を決定します。
+	if (num < 0) {
+		colorBk = RGB_ERROR;
+	}
+	else if ((x == cursor_x) && (y == cursor_y)) {
+		colorBk = RGB_SELECT;
+	}
+	else if (num == numCur) {
+		colorBk = RGB_SELECT;
+	}
+	else if ((numCur > 0) && ((x == cursor_x) || (y == cursor_y) || (((x / 3) == ((cursor_x / 3))) && ((y / 3) == (cursor_y / 3))))) {
+		colorBk = RGB_AREA;
+	}
+	pGdc->FillBox(hWnd, &rectCell[y][x], colorBk);
+	pGdc->DrawNumber(hWnd, BIGFONT, &rectCell[y][x], abs(num), RGB_NUMBER, colorBk);
+}
+
+// @brief マスに小さな数字を描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCハンドル
+// @param x, y 座標
+void View::DrawCellsSmallNumbers(HWND hWnd, HDC hdc, int x, int y) {
+	UNREFERENCED_PARAMETER(hdc);
+	int numCur = table[cursor_y][cursor_x];
+	COLORREF colorBk = RGB_NORMAL;
+	// 背景色を決定します。
+	if ((x == cursor_x) && (y == cursor_y)) {
+		colorBk = RGB_SELECT;
+	}
+	else if ((numCur > 0) && ((x == cursor_x) || (y == cursor_y) || (((x / 3) == ((cursor_x / 3))) && ((y / 3) == (cursor_y / 3))))) {
+		colorBk = RGB_AREA;
+	}
+	pGdc->FillBox(hWnd, &rectCell[y][x], colorBk);
+	// 小さな数字を描画します。
+	int bx2 = rectCell[y][x].left;
+	int by2 = rectCell[y][x].top;
+	for (int i = 0; i < 9; i++) {
+		if (bittable[y][x] & (1 << i)) {
+			COLORREF colorNum = RGB_SMLNUMBER;
+			COLORREF colorBkNum = colorBk;
+			// マスに候補数字が1つの場合
+			for (int j = 0; j < 9; j++) {
+				if (bittable[y][x] == (1 << j)) {
+					colorNum = RGB_NUMBER;
+					break;
+				}
+			}
+			// 縦横BOXで候補数字が1つの場合
+			if (colorNum == RGB_SMLNUMBER) {
+				int c1 = 0, c2 = 0, c3 = 0;
+				for (int j = 0; j < 9; j++) {
+					c1 += (bittable[y][j] & (1 << i)) > 0;
+					c2 += (bittable[j][x] & (1 << i)) > 0;
+					c3 += (bittable[y / 3 * 3 + (j / 3)][x / 3 * 3 + (j % 3)] & (1 << i)) > 0;
+				}
+				if ((c1 == 1) || (c2 == 1) || (c3 == 1)) {
+					colorNum = RGB_NUMBER;
+				}
+			}
+			// 選択数字の場合背景色を変えます。
+			if (numCur == (i + 1)) {
+				colorBkNum = RGB_SELECT;
+			}
+			RECT rect = { bx2 + len / 3 * (i % 3), by2 + len / 3 * (i / 3), bx2 + len / 3 * (i % 3) + len / 3, by2 + len / 3 * (i / 3) + len / 3 };
+			pGdc->DrawNumber(hWnd, SMALLFONT, &rect, i + 1, colorNum, colorBkNum);
+		}
+	}
+}
+
+// @brief 枠線を描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::DrawFrame(HWND hWnd, HDC hdc) {
+	UNREFERENCED_PARAMETER(hdc);
+	int x = bx + len / 2;
+	int y = by + len / 2;
+	for (int i = 0; i < 10; i++) {
+		int w = (i % 3 == 0) ? LINEB_WIDTH : LINE_WIDTH;
+		int d = w / 2;
+		RECT rect = { x - d, y + len * i - d, x + len * 9 - d + w, y + len * i - d + w };
+		RECT rect2 = { x + len * i - d, y - d, x + len * i - d + w, y + len * 9 - d + w };
+		pGdc->FillBox(hWnd, &rect, RGB_FRAME);
+		pGdc->FillBox(hWnd, &rect2, RGB_FRAME);
+	}
+}
+
+// @brief カーソルを描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::DrawCursor(HWND hWnd, HDC hdc) {
+	UNREFERENCED_PARAMETER(hdc);
+	int x = bx + len / 2 + len * cursor_x;
+	int y = by + len / 2 + len * cursor_y;
+	for (int i = 0; i < 2; i++) {
+		int w = CURSOR_WIDTH;
+		int d = w / 2;
+		RECT rect = { x - d, y + len * i - d, x + len - d + w, y + len * i - d + w };
+		RECT rect2 = { x + len * i - d, y - d, x + len * i - d + w, y + len - d + w };
+		pGdc->FillBox(hWnd, &rect, RGB_CURSOR);
+		pGdc->FillBox(hWnd, &rect2, RGB_CURSOR);
+	}
+}
+
+// @brief 塗りつぶした四角形を描画します。
+// @param hWnd ウィンドウハンドル
+// @param pRect 範囲指定のRECTへのポインタ
+// @param color 色
+// @note バッファではなく直接クライアント領域に描画します。
+void View::FillBox(HWND hWnd, HDC hdc, RECT* pRect, COLORREF color) {
+	UNREFERENCED_PARAMETER(hWnd);
+	HPEN hPenOrg = (HPEN)SelectObject(hdc, GetStockObject(DC_PEN));
+	HBRUSH hBrushOrg = (HBRUSH)SelectObject(hdc, GetStockObject(DC_BRUSH));
+	SetDCPenColor(hdc, color);
+	SetDCBrushColor(hdc, color);
+	Rectangle(hdc, pRect->left, pRect->top, pRect->right, pRect->bottom);
+	//DebugPrintf("%d, %d, %d, %d\n", pRect->left, pRect->top, pRect->right, pRect->bottom);
+	SelectObject(hdc, hBrushOrg);
+	SelectObject(hdc, hPenOrg);
+}

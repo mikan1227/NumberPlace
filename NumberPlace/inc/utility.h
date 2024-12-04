@@ -1,6 +1,6 @@
 /*******************************************************************************
- * File : App.h
- * Breif : Appクラスのヘッダーファイルです。
+ * File : utility.h
+ * Breif : ユーティリティ関連のヘッダーファイルです。
  * Copyright (c) 2024 mikan-orange
  * This software is released under the MIT License, see LICENSE.
  ******************************************************************************/
@@ -16,19 +16,16 @@
 // Definitions
 // -----------------------------------------------------------------------------
 
+#if defined(DEBUG) || defined(_DEBUG)
+#define DebugPrintf(fmt, ...)	debugprintf(fmt, __VA_ARGS__)
+#else
+#define DebugPrintf(fmt, ...)
+#endif
+
 // -----------------------------------------------------------------------------
 // Declarations
 // -----------------------------------------------------------------------------
 
-// Appクラスの宣言です。
-class App {
-private:
-	HINSTANCE hInst;						// インスタンスハンドル
-
-public:
-	App();
-	~App();
-	BOOL Init();
-	void Run();
-	ATOM AppRegisterClass();
-};
+#if defined(DEBUG) || defined(_DEBUG)
+void debugprintf(const char* format, ...);
+#endif

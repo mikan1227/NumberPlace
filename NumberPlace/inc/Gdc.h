@@ -1,6 +1,6 @@
 /*******************************************************************************
- * File : App.h
- * Breif : Appクラスのヘッダーファイルです。
+ * File : Gdc.h
+ * Breif : Gdcクラスのヘッダーファイルです。
  * Copyright (c) 2024 mikan-orange
  * This software is released under the MIT License, see LICENSE.
  ******************************************************************************/
@@ -16,19 +16,29 @@
 // Definitions
 // -----------------------------------------------------------------------------
 
+#define BIGFONT		0	// 大きいフォント
+#define SMALLFONT	1	// 小さいフォント
+
 // -----------------------------------------------------------------------------
 // Declarations
 // -----------------------------------------------------------------------------
 
-// Appクラスの宣言です。
-class App {
+// Gdcクラスの宣言です。
+class Gdc {
 private:
-	HINSTANCE hInst;						// インスタンスハンドル
+	HDC hdcMem;			// メモリDC
+	HBITMAP hBmp;		// メモリバッファ
+	HFONT hFontBig;		// 大きいフォント
+	HFONT hFontSmall;	// 小さいフォント
+	int length;			// 一辺の長さ(フォントの大きさの計算に使用)
+	static LOGFONT lf;	// フォントの定義
 
 public:
-	App();
-	~App();
-	BOOL Init();
-	void Run();
-	ATOM AppRegisterClass();
+	Gdc();
+	~Gdc();
+	int Init(HWND hWnd);
+	BOOL CreateFonts(HWND hWnd, int len);
+	void FillBox(HWND hWnd, RECT* pRect, COLORREF color);
+	void DrawNumber(HWND hWnd, int font, RECT *pRect, int num, COLORREF colF, COLORREF colB);
+	void Render(HWND hWnd, HDC hdc);
 };

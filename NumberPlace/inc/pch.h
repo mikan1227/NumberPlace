@@ -14,3 +14,5 @@
 // プリコンパイルするヘッダーファイルをincludeします。
 
 #include "framework.h"
+#include "application.h"
+#include "utility.h"
