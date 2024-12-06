@@ -25,10 +25,11 @@ private:
 	int dpi;		// DPI
 	int len;		// マスの一辺の長さ
 	RECT rectCell[9][9];	// マスの位置
-	int bx, by;		// 画面描画の起点となる左上の座標
+	int basex, basey;		// 画面描画の起点となる左上の座標
 	int cursor_x, cursor_y;		// カーソルの座標
 	char table[9][9];		// テーブル
 	WORD bittable[9][9];	// ビットテーブル
+	int dbgflag;			// デバッグフラグ
 
 public:
 	View();
@@ -54,5 +55,8 @@ private:
 	void FillBox(HWND hWnd, HDC hdc, RECT* pRect, COLORREF color);
 
 	BOOL SetNumber(int num);
-	void ScanSimple();
+	void ScanSimple(BOOL bClear);
+	void Analyze(HWND hWnd);
+	int AnalyzeLocked();
+	int AnalyzeLocked2();
 };

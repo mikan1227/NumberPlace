@@ -34,7 +34,7 @@ using std::endl;
 #define RGB_PURPLE		RGB(128, 0, 128)
 #define RGB_MAGENTA		RGB(255, 0, 255)
 #define RGB_GREEN		RGB(0, 128, 0)
-#define RB_LIME			RGB(0, 255, 0)
+#define RGB_LIME		RGB(0, 255, 0)
 #define RGB_OLIVE		RGB(128, 128, 0)
 #define RGB_YELLOW		RGB(255, 255, 0)
 #define RGB_NAVY		RGB(0, 0, 128)
@@ -52,6 +52,7 @@ using std::endl;
 #define RGB_NORMAL		RGB_WHITE		// 通常マスの背景色
 #define RGB_ERROR		RGB_RED			// 異常マスの背景色
 #define RGB_SELECT		RGB_YELLOW		// 選択マスの背景色
+#define RGB_SMLSELECT	RGB_LIME		// 選択された小さい数字の背景色
 #define RGB_AREA		RGB_LTYELLOW	// 範囲内の背景色
 #define RGB_COMPLETE	RGB_LYCYAN		// 完成マスの背景色
 #define RGB_NUMBER		RGB_BLACK		// 数字の文字色

@@ -16,16 +16,19 @@
 // Definitions
 // -----------------------------------------------------------------------------
 
+// Debugビルド版のみデバッグ出力します。
 #if defined(DEBUG) || defined(_DEBUG)
 #define DebugPrintf(fmt, ...)	debugprintf(fmt, __VA_ARGS__)
 #else
 #define DebugPrintf(fmt, ...)
 #endif
 
+// Release/Debug版どちらでも出力します。
+#define Printf(fmt, ...) debugprintf(fmt, __VA_ARGS__)
+
 // -----------------------------------------------------------------------------
 // Declarations
 // -----------------------------------------------------------------------------
 
-#if defined(DEBUG) || defined(_DEBUG)
 void debugprintf(const char* format, ...);
-#endif
+

@@ -28,8 +28,7 @@
 // Functions
 // -----------------------------------------------------------------------------
 
-#if defined(DEBUG) || defined(_DEBUG)
-// @brief デバッグ出力関数です。
+// @brief デバッグ文字列出力関数です。
 // @param format フォーマット文
 // @param ... 可変個の引数
 void debugprintf(const char* format, ...) {
@@ -40,4 +39,4 @@ void debugprintf(const char* format, ...) {
 	cout << str;
 	va_end(ap);
 }
-#endif
+

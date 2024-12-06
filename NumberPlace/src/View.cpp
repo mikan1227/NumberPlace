@@ -27,7 +27,7 @@
 
 // @brief Viewクラスのインストラクタです。
 View::View() :
-	pGdc(), bRedraw(TRUE), dpi(), len(), bx(), by(), cursor_x(), cursor_y() {
+	pGdc(), bRedraw(TRUE), dpi(), len(), basex(), basey(), cursor_x(), cursor_y(), dbgflag() {
 	ZeroMemory(rectCell, sizeof(rectCell));
 	ZeroMemory(table, sizeof(table));
 	for (int j = 0; j < 9; j++) {
@@ -110,6 +110,10 @@ void View::OnLButtonDown(HWND hWnd, int keys, int x, int y) {
 	UNREFERENCED_PARAMETER(keys);
 	UNREFERENCED_PARAMETER(x);
 	UNREFERENCED_PARAMETER(y);
+	// 解析を行います。
+	Analyze(hWnd);
+	bRedraw |= TRUE;
+	InvalidateRect(hWnd, nullptr, FALSE);
 }
 
 // @brief WM_RBUTTONDOWNのメッセージハンドラです。
@@ -121,6 +125,9 @@ void View::OnRButtonDown(HWND hWnd, int keys, int x, int y) {
 	UNREFERENCED_PARAMETER(keys);
 	UNREFERENCED_PARAMETER(x);
 	UNREFERENCED_PARAMETER(y);
+	dbgflag ^= 1;
+	bRedraw |= TRUE;
+	InvalidateRect(hWnd, nullptr, FALSE);
 }
 
 // @brief WM_KEYNDOWNのメッセージハンドラです。
@@ -231,25 +238,25 @@ void View::Draw(HWND hWnd, HDC hdc) {
 // @param hWnd ウィンドウハンドル
 void View::CalcPosition(HWND hWnd, RECT *pRect) {
 	UNREFERENCED_PARAMETER(hWnd);
-	bx = 0;
-	by = 0;
+	basex = 0;
+	basey = 0;
 	int cx = pRect->right - pRect->left;
 	int cy = pRect->bottom - pRect->top;
 	if (cx < cy) {
 		cy = cx * DEFAULT_HEIGHT / DEFAULT_WIDTH;
-		by = (pRect->bottom - cy) / 2;
+		basey = (pRect->bottom - cy) / 2;
 	}
 	else {
 		cx = cy * DEFAULT_WIDTH / DEFAULT_HEIGHT;
-		bx = (pRect->right - cx) / 2;
+		basex = (pRect->right - cx) / 2;
 	}
 	len = cy / 10;
 	for (int j = 0; j < 9; j++) {
 		for (int i = 0; i < 9; i++) {
-			rectCell[j][i].left = bx + len / 2 + len * i;
-			rectCell[j][i].top = by + len / 2 + len * j;
-			rectCell[j][i].right = bx + len / 2 + len * (i + 1);
-			rectCell[j][i].bottom = by + len / 2 + len * (j + 1);
+			rectCell[j][i].left = basex + len / 2 + len * i;
+			rectCell[j][i].top = basey + len / 2 + len * j;
+			rectCell[j][i].right = basex + len / 2 + len * (i + 1);
+			rectCell[j][i].bottom = basey + len / 2 + len * (j + 1);
 		}
 	}
 }
@@ -271,7 +278,7 @@ void View::DrawCells(HWND hWnd, HDC hdc) {
 	if (pGdc->CreateFonts(hWnd, len)) {
 		for (int j = 0; j < 9; j++) {
 			for (int i = 0; i < 9; i++) {
-				if (table[j][i]) {
+				if (table[j][i] && !dbgflag) {
 					// 大きい数字を描画します。
 					DrawCellsBigNumber(hWnd, hdc, i, j);
 				}
@@ -330,8 +337,8 @@ void View::DrawCellsSmallNumbers(HWND hWnd, HDC hdc, int x, int y) {
 	}
 	pGdc->FillBox(hWnd, &rectCell[y][x], colorBk);
 	// 小さな数字を描画します。
-	int bx2 = rectCell[y][x].left;
-	int by2 = rectCell[y][x].top;
+	int bx = rectCell[y][x].left;
+	int by = rectCell[y][x].top;
 	for (int i = 0; i < 9; i++) {
 		if (bittable[y][x] & (1 << i)) {
 			COLORREF colorNum = RGB_SMLNUMBER;
@@ -339,6 +346,7 @@ void View::DrawCellsSmallNumbers(HWND hWnd, HDC hdc, int x, int y) {
 			// マスに候補数字が1つの場合
 			for (int j = 0; j < 9; j++) {
 				if (bittable[y][x] == (1 << j)) {
+					Printf("Naked Single [R%dC%d] = %d\n", y + 1, x + 1, j + 1);
 					colorNum = RGB_NUMBER;
 					break;
 				}
@@ -352,14 +360,15 @@ void View::DrawCellsSmallNumbers(HWND hWnd, HDC hdc, int x, int y) {
 					c3 += (bittable[y / 3 * 3 + (j / 3)][x / 3 * 3 + (j % 3)] & (1 << i)) > 0;
 				}
 				if ((c1 == 1) || (c2 == 1) || (c3 == 1)) {
+					Printf("Hidden Single [R%dC%d] = %d\n", y + 1, x + 1, i + 1);
 					colorNum = RGB_NUMBER;
 				}
 			}
 			// 選択数字の場合背景色を変えます。
 			if (numCur == (i + 1)) {
-				colorBkNum = RGB_SELECT;
+				colorBkNum = RGB_SMLSELECT;
 			}
-			RECT rect = { bx2 + len / 3 * (i % 3), by2 + len / 3 * (i / 3), bx2 + len / 3 * (i % 3) + len / 3, by2 + len / 3 * (i / 3) + len / 3 };
+			RECT rect = { bx + len / 3 * (i % 3), by + len / 3 * (i / 3), bx + len / 3 * (i % 3) + len / 3, by + len / 3 * (i / 3) + len / 3 };
 			pGdc->DrawNumber(hWnd, SMALLFONT, &rect, i + 1, colorNum, colorBkNum);
 		}
 	}
@@ -370,8 +379,8 @@ void View::DrawCellsSmallNumbers(HWND hWnd, HDC hdc, int x, int y) {
 // @param hdc DCのハンドル
 void View::DrawFrame(HWND hWnd, HDC hdc) {
 	UNREFERENCED_PARAMETER(hdc);
-	int x = bx + len / 2;
-	int y = by + len / 2;
+	int x = basex + len / 2;
+	int y = basey + len / 2;
 	for (int i = 0; i < 10; i++) {
 		int w = (i % 3 == 0) ? LINEB_WIDTH : LINE_WIDTH;
 		int d = w / 2;
@@ -387,8 +396,8 @@ void View::DrawFrame(HWND hWnd, HDC hdc) {
 // @param hdc DCのハンドル
 void View::DrawCursor(HWND hWnd, HDC hdc) {
 	UNREFERENCED_PARAMETER(hdc);
-	int x = bx + len / 2 + len * cursor_x;
-	int y = by + len / 2 + len * cursor_y;
+	int x = basex + len / 2 + len * cursor_x;
+	int y = basey + len / 2 + len * cursor_y;
 	for (int i = 0; i < 2; i++) {
 		int w = CURSOR_WIDTH;
 		int d = w / 2;
@@ -411,7 +420,6 @@ void View::FillBox(HWND hWnd, HDC hdc, RECT* pRect, COLORREF color) {
 	SetDCPenColor(hdc, color);
 	SetDCBrushColor(hdc, color);
 	Rectangle(hdc, pRect->left, pRect->top, pRect->right, pRect->bottom);
-	//DebugPrintf("%d, %d, %d, %d\n", pRect->left, pRect->top, pRect->right, pRect->bottom);
 	SelectObject(hdc, hBrushOrg);
 	SelectObject(hdc, hPenOrg);
 }
