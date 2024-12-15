@@ -39,6 +39,8 @@ public:
 	int Init(HWND hWnd);
 	BOOL CreateFonts(HWND hWnd, int len);
 	void FillBox(HWND hWnd, RECT* pRect, COLORREF color);
-	void DrawNumber(HWND hWnd, int font, RECT *pRect, int num, COLORREF colF, COLORREF colB);
+	void FillBox2(HWND hWnd, RECT* pRect, COLORREF colLine, COLORREF colBk);
+	void DrawNumber(HWND hWnd, int font, RECT* pRect, int num, COLORREF colF, COLORREF colB);
+	void DrawBtnText(HWND hWnd, int font, RECT* pRect, const TCHAR* str, COLORREF colF, COLORREF colB);
 	void Render(HWND hWnd, HDC hdc);
 };

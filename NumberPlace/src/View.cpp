@@ -27,7 +27,8 @@
 
 // @brief Viewクラスのインストラクタです。
 View::View() :
-	pGdc(), bRedraw(TRUE), dpi(), len(), basex(), basey(), cursor_x(), cursor_y(), dbgflag() {
+	pGdc(), bRedraw(TRUE), bBtnRedraw(), bCaptured(), dpi(), len(), basex(), basey(), cursor_x(), cursor_y(), dbgflag(),
+	pBtnClear(), pBtnLoad(), pBtnSave(), pBtnAnalyze(), pBtnPrev(), pBtnNext() {
 	ZeroMemory(rectCell, sizeof(rectCell));
 	ZeroMemory(table, sizeof(table));
 	for (int j = 0; j < 9; j++) {
@@ -35,6 +36,12 @@ View::View() :
 			bittable[j][i] = FULLBIT;
 		}
 	}
+	pBtnClear = new Button(IDM_CLEAR, BTN_CLEAR_TEXT);
+	pBtnLoad = new Button(IDM_LOAD, BTN_LOAD_TEXT);
+	pBtnSave = new Button(IDM_SAVE, BTN_SAVE_TEXT);
+	pBtnAnalyze = new Button(IDM_ANALYZE, BTN_ANALYZE_TEXT);
+	pBtnPrev = new Button(IDM_PREV, BTN_PREV_TEXT);
+	pBtnNext = new Button(IDM_NEXT, BTN_NEXT_TEXT);
 }
 
 // @brief Viewクラスのデストラクタです。
@@ -42,6 +49,30 @@ View::~View() {
 	if (pGdc) {
 		delete pGdc;
 		pGdc = nullptr;
+	}
+	if (pBtnClear) {
+		delete pBtnClear;
+		pBtnClear = nullptr;
+	}
+	if (pBtnLoad) {
+		delete pBtnLoad;
+		pBtnLoad = nullptr;
+	}
+	if (pBtnSave) {
+		delete pBtnSave;
+		pBtnSave = nullptr;
+	}
+	if (pBtnAnalyze) {
+		delete pBtnAnalyze;
+		pBtnAnalyze = nullptr;
+	}
+	if (pBtnPrev) {
+		delete pBtnPrev;
+		pBtnPrev = nullptr;
+	}
+	if (pBtnNext) {
+		delete pBtnNext;
+		pBtnNext = nullptr;
 	}
 }
 
@@ -57,6 +88,14 @@ int View::OnCreate(HWND hWnd) {
 	if (pGdc) {
 		ret =  pGdc->Init(hWnd);
 	}
+	if ((pBtnLoad == nullptr) || (pBtnSave == nullptr) || (pBtnAnalyze == nullptr) 
+		|| (pBtnPrev == nullptr) || (pBtnNext == nullptr)) {
+		ret = -1;	// 異常終了
+	}
+	pBtnClear->Enable(TRUE);
+	pBtnLoad->Enable(TRUE);
+	pBtnSave->Enable(TRUE);
+	pBtnAnalyze->Enable(TRUE);
 	return ret;
 }
 
@@ -106,14 +145,40 @@ void  View::OnDpiChanged(HWND hWnd, int newdpi, RECT* pRect) {
 // @param keys 同時に押されているキーのフラグ
 // @param x, y 座標
 void View::OnLButtonDown(HWND hWnd, int keys, int x, int y) {
-	UNREFERENCED_PARAMETER(hWnd);
 	UNREFERENCED_PARAMETER(keys);
-	UNREFERENCED_PARAMETER(x);
-	UNREFERENCED_PARAMETER(y);
-	// 解析を行います。
-	Analyze(hWnd);
-	bRedraw |= TRUE;
-	InvalidateRect(hWnd, nullptr, FALSE);
+	for (int j = 0; j < 9; j++) {
+		for (int i = 0; i < 9; i++) {
+			if ((rectCell[j][i].left <= x) && (x < rectCell[j][i].right)) {
+				if ((rectCell[j][i].top <= y) && (y < rectCell[j][i].bottom)) {
+					cursor_x = i;
+					cursor_y = j;
+					bRedraw |= TRUE;
+					InvalidateRect(hWnd, nullptr, FALSE);
+					return;
+				}
+			}
+		}
+	}
+	if (pBtnClear->OnLButtonDown(hWnd, x, y)) {
+		pBtnClear->UnHovered();
+		bBtnRedraw |= TRUE;
+	}
+	if (pBtnLoad->OnLButtonDown(hWnd, x, y)) {
+		pBtnLoad->UnHovered();
+		bBtnRedraw |= TRUE;
+	}
+	if (bBtnRedraw |= pBtnSave->OnLButtonDown(hWnd, x, y)) {
+		pBtnSave->UnHovered();
+		bBtnRedraw |= TRUE;
+	}
+	pBtnAnalyze->OnLButtonDown(hWnd, x, y);
+	pBtnPrev->OnLButtonDown(hWnd, x, y);
+	pBtnNext->OnLButtonDown(hWnd, x, y);
+	if (bBtnRedraw) {
+		HDC hdc = GetDC(hWnd);
+		OnPaint(hWnd, hdc);
+		ReleaseDC(hWnd, hdc);
+	}
 }
 
 // @brief WM_RBUTTONDOWNのメッセージハンドラです。
@@ -128,6 +193,36 @@ void View::OnRButtonDown(HWND hWnd, int keys, int x, int y) {
 	dbgflag ^= 1;
 	bRedraw |= TRUE;
 	InvalidateRect(hWnd, nullptr, FALSE);
+}
+
+// @brief WM_MOUSEMOVEのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param keys 同時に押されているキーのフラグ
+// @param x, y 座標
+void View::OnMouseMove(HWND hWnd, int keys, int x, int y) {
+	UNREFERENCED_PARAMETER(keys);
+	BOOL bCapture = FALSE;
+
+	// 各ボタンにMOUSEMOVEメッセージを伝えます。
+	bCapture |= pBtnClear->OnMouseMove(hWnd, x, y);
+	bCapture |= pBtnLoad->OnMouseMove(hWnd, x, y);
+	bCapture |= pBtnSave->OnMouseMove(hWnd, x, y);
+	bCapture |= pBtnAnalyze->OnMouseMove(hWnd, x, y);
+	bCapture |= pBtnPrev->OnMouseMove(hWnd, x, y);
+	bCapture |= pBtnNext->OnMouseMove(hWnd, x, y);
+	bBtnRedraw |= TRUE;	// @Todo 変化がある場合のみTRUEにしたい。
+	if (bCapture) {
+		// マウスを素早く動かしてウィンドウの外に移動させると、
+		// ボタンがHover状態で残ってしまうことがあったので
+		// マウスをキャプチャーします。
+		SetCapture(hWnd);
+		bCaptured = TRUE;
+	}
+	else if (bCaptured) {
+		// マウスのキャプチャーを解放します。
+		ReleaseCapture();
+		bCaptured = FALSE;
+	}
 }
 
 // @brief WM_KEYNDOWNのメッセージハンドラです。
@@ -198,6 +293,65 @@ void View::OnKeyDown(HWND hWnd, int key) {
 	}
 }
 
+// @brief WM_COMMANDのメッセージハンドラです。
+// @param hWnd ウィンドウハンドル
+// @param id メッセージID
+void View::OnCommand(HWND hWnd, WORD id) {
+	switch (id) {
+	case IDM_CLEAR:
+		{
+			int ret = MessageBox(hWnd, TEXT("Clear?"), TEXT("Confirmation"), MB_ICONQUESTION | MB_OKCANCEL);
+			if (ret == IDOK) {
+				ZeroMemory(table, sizeof(table));
+				ScanSimple(TRUE);
+				bRedraw |= TRUE;
+				InvalidateRect(hWnd, nullptr, FALSE);
+			}
+		}
+		break;
+	case IDM_LOAD:
+		{
+			TCHAR filename[MAX_PATH] = TEXT("NumberPlace.txt");
+			OPENFILENAME ofn = {};
+			ofn.lStructSize = sizeof(OPENFILENAME);
+			ofn.hwndOwner = hWnd;
+			ofn.lpstrFilter = TEXT("Text File (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0");
+			ofn.lpstrFile = filename;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.Flags = OFN_FILEMUSTEXIST;
+			if (GetOpenFileName(&ofn)) {
+				Load(hWnd, filename);
+			}
+		}
+		break;
+	case IDM_SAVE:
+		{
+			TCHAR filename[MAX_PATH] = TEXT("NumberPlace.txt");
+			OPENFILENAME ofn = {};
+			ofn.lStructSize = sizeof(OPENFILENAME);
+			ofn.hwndOwner = hWnd;
+			ofn.lpstrFilter = TEXT("Text File (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0");
+			ofn.lpstrFile = filename;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.Flags = OFN_FILEMUSTEXIST;
+			if (GetSaveFileName(&ofn)) {
+				Save(hWnd, filename);
+			}
+		}
+		break;
+	case IDM_ANALYZE:
+		// 解析を行います。
+		Analyze(hWnd);
+		bRedraw |= TRUE;
+		InvalidateRect(hWnd, nullptr, FALSE);
+		break;
+	case IDM_PREV:
+		break;
+	case IDM_NEXT:
+		break;
+	}
+}
+
 // @brief WM_PAINTのメッセージハンドラです。
 // @param hWnd ウィンドウハンドル
 // @param hdc DCのハンドル
@@ -206,6 +360,12 @@ void View::OnPaint(HWND hWnd, HDC hdc) {
 		// バッファに描画します。
 		Draw(hWnd, hdc);
 		bRedraw = FALSE;
+		bBtnRedraw = FALSE;
+	}
+	else if (bBtnRedraw) {
+		// ボタンを描画します。
+		DrawButtons(hWnd, hdc);
+		bBtnRedraw = FALSE;
 	}
 	// バッファの内容を画面に表示します。
 	pGdc->Render(hWnd, hdc);
@@ -232,11 +392,14 @@ void View::Draw(HWND hWnd, HDC hdc) {
 
 	// カーソルを描画します。
 	DrawCursor(hWnd, hdc);
+
+	// ボタンを描画します。
+	DrawButtons(hWnd, hdc);
 }
 
 // @brief 位置を計算します。
 // @param hWnd ウィンドウハンドル
-void View::CalcPosition(HWND hWnd, RECT *pRect) {
+void View::CalcPosition(HWND hWnd, RECT* pRect) {
 	UNREFERENCED_PARAMETER(hWnd);
 	basex = 0;
 	basey = 0;
@@ -259,6 +422,47 @@ void View::CalcPosition(HWND hWnd, RECT *pRect) {
 			rectCell[j][i].bottom = basey + len / 2 + len * (j + 1);
 		}
 	}
+	int btnx = basex + len / 2 + len * 10;
+	int btny = basey + len / 2;
+	int btncx = len * 3;
+	int btncy = len;
+	int bx = (cx - len / 2 - btnx - btncx) / 2;
+
+	RECT* pBtnRect = pBtnClear->GetRect();
+	pBtnRect->left = btnx + bx;
+	pBtnRect->top = btny;
+	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->bottom = btny + btncy;
+
+	pBtnRect = pBtnLoad->GetRect();
+	pBtnRect->left = btnx + bx;
+	pBtnRect->top = btny + len;
+	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->bottom = btny + len + btncy;
+
+	pBtnRect = pBtnSave->GetRect();
+	pBtnRect->left = btnx + bx;
+	pBtnRect->top = btny + len * 2;
+	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->bottom = btny + len * 2 + btncy;
+
+	pBtnRect = pBtnAnalyze->GetRect();
+	pBtnRect->left = btnx + bx;
+	pBtnRect->top = btny + len * 3;
+	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->bottom = btny + len * 3 + btncy;
+
+	pBtnRect = pBtnPrev->GetRect();
+	pBtnRect->left = btnx + bx;
+	pBtnRect->top = btny + len * 4;
+	pBtnRect->right = btnx + bx + btncx / 2;
+	pBtnRect->bottom = btny + len * 4 + btncy;
+
+	pBtnRect = pBtnNext->GetRect();
+	pBtnRect->left = btnx + bx + btncx / 2;
+	pBtnRect->top = btny + len * 4;
+	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->bottom = btny + len * 4 + btncy;
 }
 
 // @brief 背景を塗ります。
@@ -408,6 +612,36 @@ void View::DrawCursor(HWND hWnd, HDC hdc) {
 	}
 }
 
+// @brief 各種ボタンを描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+void View::DrawButtons(HWND hWnd, HDC hdc) {
+	DrawButton(hWnd, hdc, pBtnClear);
+	DrawButton(hWnd, hdc, pBtnLoad);
+	DrawButton(hWnd, hdc, pBtnSave);
+	DrawButton(hWnd, hdc, pBtnAnalyze);
+	DrawButton(hWnd, hdc, pBtnPrev);
+	DrawButton(hWnd, hdc, pBtnNext);
+}
+
+// @brief ボタンを描画します。
+// @param hWnd ウィンドウハンドル
+// @param hdc DCのハンドル
+// @param pBtn Buttonオブジェクトへのポインタ
+void View::DrawButton(HWND hWnd, HDC hdc, Button* pBtn) {
+	UNREFERENCED_PARAMETER(hdc);
+	COLORREF colFont = RGB_BTNFONT2;
+	COLORREF colBk = RGB_BTNBK2;
+	COLORREF colLine = RGB_BTNBK2;
+	if (pBtn->IsEnabled()) {
+		colFont = RGB_BTNFONT;
+		colBk = (pBtn->IsHovered()) ? RGB_BTNBK : RGB_BTNBK2;
+		colLine = (pBtn->IsHovered()) ? RGB_BTNLINE : RGB_BTNLINE2;
+	}
+	pGdc->FillBox2(hWnd, pBtn->GetRect(), colLine, colBk);
+	pGdc->DrawBtnText(hWnd, BIGFONT, pBtn->GetRect(), pBtn->GetText(), colFont, colBk);
+}
+
 // @brief 塗りつぶした四角形を描画します。
 // @param hWnd ウィンドウハンドル
 // @param pRect 範囲指定のRECTへのポインタ
@@ -422,4 +656,63 @@ void View::FillBox(HWND hWnd, HDC hdc, RECT* pRect, COLORREF color) {
 	Rectangle(hdc, pRect->left, pRect->top, pRect->right, pRect->bottom);
 	SelectObject(hdc, hBrushOrg);
 	SelectObject(hdc, hPenOrg);
+}
+
+// @brief ファイルから盤面データを読み込みます。
+// @param filename ファイル名
+void View::Load(HWND hWnd, TCHAR* filename) {
+	std::ifstream file;
+	file.open(filename);
+	if (!file) {
+		MessageBox(hWnd, TEXT("Can't open file!"), TEXT("Error"), MB_OK | MB_ICONERROR);
+		return;
+	}
+	ZeroMemory(table, sizeof(table));
+	for (int j = 0; j < 9; j++) {
+		for (int i = 0; i < 9; i++) {
+			while (1) {
+				int c = file.get();
+				if (c == std::fstream::traits_type::eof()) {
+					goto exit;
+				}
+				if (('0' <= c) && (c <= '9')) {
+					table[j][i] = (char)(c - '0');
+					break;
+				}
+			}
+		}
+	}
+exit:
+	file.close();
+	ScanSimple(TRUE);
+	bRedraw |= TRUE;
+	InvalidateRect(hWnd, nullptr, FALSE);
+}
+
+// @brief 盤面データをファイルに書き出します。
+// @param filename ファイル名
+void View::Save(HWND hWnd, TCHAR* filename) {
+	std::ofstream file;
+	file.open(filename, std::ios_base::trunc);
+	if (!file) {
+		MessageBox(hWnd, TEXT("Can't open file!"), TEXT("Error"), MB_OK | MB_ICONERROR);
+		return;
+	}
+	for (int j = 0; j < 9; j++) {
+		for (int i = 0; i < 9; i++) {
+			file.put('0' + table[j][i]);
+			if ((i != 8) || (j != 8)) {
+				file.put(',');
+			}
+			if (i == 8) {
+				file << std::endl;
+			}
+		}
+	}
+
+	file.flush();
+	file.close();
+	ScanSimple(TRUE);
+	bRedraw |= TRUE;
+	InvalidateRect(hWnd, nullptr, FALSE);
 }

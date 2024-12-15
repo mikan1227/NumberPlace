@@ -130,13 +130,26 @@ void Gdc::FillBox(HWND hWnd, RECT* pRect, COLORREF color) {
 	//DebugPrintf("%d, %d, %d, %d\n", pRect->left, pRect->top, pRect->right, pRect->bottom);
 }
 
+// @brief 塗りつぶした四角形を描画します。
+// @param hWnd ウィンドウハンドル
+// @param pRect 範囲指定のRECTへのポインタ
+// @param colLine 枠線色
+// @param colBk 背景色
+void Gdc::FillBox2(HWND hWnd, RECT* pRect, COLORREF colLine, COLORREF colBk) {
+	UNREFERENCED_PARAMETER(hWnd);
+	SetDCPenColor(hdcMem, colLine);
+	SetDCBrushColor(hdcMem, colBk);
+	Rectangle(hdcMem, pRect->left, pRect->top, pRect->right, pRect->bottom);
+	//DebugPrintf("%d, %d, %d, %d\n", pRect->left, pRect->top, pRect->right, pRect->bottom);
+}
+
 // @brief 数字を描画します。
 // @param hWnd ウィンドウハンドル
 // @param font フォント指定(BIGFONT/SMALLLFONT)
 // @param pRect 位置指定
 // @param num 数字
 // @param colorF, colorB 文字色、背景色
-void Gdc::DrawNumber(HWND hWnd, int font, RECT *pRect, int num, COLORREF colF, COLORREF colB) {
+void Gdc::DrawNumber(HWND hWnd, int font, RECT* pRect, int num, COLORREF colF, COLORREF colB) {
 	UNREFERENCED_PARAMETER(hWnd);
 	SetTextColor(hdcMem, colF);
 	SetBkColor(hdcMem, colB);
@@ -146,9 +159,23 @@ void Gdc::DrawNumber(HWND hWnd, int font, RECT *pRect, int num, COLORREF colF, C
 	else {
 		SelectObject(hdcMem, hFontSmall);
 	}
-	
+
 	TCHAR c = (TCHAR)('0' + num);
 	DrawText(hdcMem, &c, 1, pRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+}
+
+void Gdc::DrawBtnText(HWND hWnd, int font, RECT* pRect, const TCHAR* str, COLORREF colF, COLORREF colB) {
+	UNREFERENCED_PARAMETER(hWnd);
+	SetTextColor(hdcMem, colF);
+	SetBkColor(hdcMem, colB);
+	if (font == BIGFONT) {
+		SelectObject(hdcMem, hFontBig);
+	}
+	else {
+		SelectObject(hdcMem, hFontSmall);
+	}
+
+	DrawText(hdcMem, str, (int)_tcslen(str), pRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
 // @brief バッファから画面に転送します。
