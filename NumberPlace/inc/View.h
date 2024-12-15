@@ -59,4 +59,6 @@ private:
 	void Analyze(HWND hWnd);
 	int AnalyzeLocked();
 	int AnalyzeLocked2();
+	int AnalyzeHiddenPair();
+	int AnalyzeNakedPair();
 };

@@ -101,6 +101,10 @@ void View::Analyze(HWND hWnd) {
 		ret = AnalyzeLocked();
 		if (ret) break;
 		ret = AnalyzeLocked2();
+		if (ret) break;
+		ret = AnalyzeHiddenPair();
+		if (ret) break;
+		ret = AnalyzeNakedPair();
 		break;
 	}
 	ScanSimple(FALSE);
@@ -147,7 +151,7 @@ int View::AnalyzeLocked() {
 								if (rowtable[by + row][i] & (1 << num)) {
 									for (int k = 0; k < 3; k++) {
 										if (bittable[by + row][i * 3 + k] & (1 << num)) {
-											Printf("Locked(Pointing) [R%dC%d] = %d\n", by + row + 1, i * 3 + k + 1, num + 1);
+											Printf("Locked(Pointing) Row    [R%dC%d] = %d\n", by + row + 1, i * 3 + k + 1, num + 1);
 											bittable[by + row][i * 3 + k] &= ~(1 << num);
 											count++;
 										}
@@ -163,7 +167,7 @@ int View::AnalyzeLocked() {
 								if (rowtable[by + i][box % 3] & (1 << num)) {
 									for (int k = 0; k < 3; k++) {
 										if (bittable[by + i][bx + k] & (1 << num)) {
-											Printf("Locked(Claiming) [R%dC%d] = %d\n", by + i + 1, bx + k + 1, num + 1);
+											Printf("Locked(Claiming) RowBox [R%dC%d] = %d\n", by + i + 1, bx + k + 1, num + 1);
 											bittable[by + i][bx + k] &= ~(1 << num);
 											count++;
 										}
@@ -220,7 +224,7 @@ int View::AnalyzeLocked2() {
 								if (columntable[i][bx + col] & (1 << num)) {
 									for (int k = 0; k < 3; k++) {
 										if (bittable[i * 3 + k][bx + col] & (1 << num)) {
-											Printf("Locked(Pointing) [R%dC%d] = %d\n", i * 3 + k + 1, bx + col + 1, num + 1);
+											Printf("Locked(Pointing) Column [R%dC%d] = %d\n", i * 3 + k + 1, bx + col + 1, num + 1);
 											bittable[i * 3 + k][bx + col] &= ~(1 << num);
 											count++;
 										}
@@ -236,7 +240,7 @@ int View::AnalyzeLocked2() {
 								if (columntable[box / 3][bx + i] & (1 << num)) {
 									for (int k = 0; k < 3; k++) {
 										if (bittable[by + k][bx + i] & (1 << num)) {
-											Printf("Locked(Claiming) [R%dC%d] = %d\n", by + k + 1, bx + i + 1, num + 1);
+											Printf("Locked(Claiming) ColBox [R%dC%d] = %d\n", by + k + 1, bx + i + 1, num + 1);
 											bittable[by + k][bx + i] &= ~(1 << num);
 											count++;
 										}
@@ -245,6 +249,174 @@ int View::AnalyzeLocked2() {
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+	return count;
+}
+
+// @biref 二国同盟(HiddenPair)を調べます。
+// @return 候補を削除できた数
+int View::AnalyzeHiddenPair() {
+	int count = 0;
+	// 行または列でスキャンします。
+	for (int j = 0; j < 9; j++) {
+		int bx = j % 3 * 3;
+		int by = j / 3 * 3;
+		for (int i1 = 1; i1 < 9; i1++) {		// 上位ビット
+			for (int i2 = 0; i2 < i1; i2++) {	// 下位ビット
+				int bits = (1 << i1) | (1 << i2);	// 調べるビットパターン
+				int c1 = 0, c2 = 0, c3 = 0;	// 見つかった数
+				int tmp1 = 0, tmp2 = 0, tmp3 = 0;	// 見つかったパターンのOR
+				for (int i = 0; i < 9; i++) {
+					if (bittable[j][i] & bits) {	// 行
+						c1++;
+						tmp1 |= (bittable[j][i] & bits);
+					}
+					if (bittable[i][j] & bits) {	// 列
+						c2++;
+						tmp2 |= bittable[i][j] & bits;
+					}
+					if (bittable[by + i / 3][bx + i % 3] & bits) {		// BOX
+						c3++;
+						tmp3 |= bittable[by + i / 3][bx + i % 3] & bits;
+					}
+				}
+				if ((c1 == 2) && (tmp1 == bits)) {	// 行
+					for (int i = 0; i < 9; i++) {
+						if (bittable[j][i] & bits) {
+							for (int k = 0; k < 9; k++) {
+								if ((k == i1) || (k == i2)) {
+									continue;
+								}
+								if (bittable[j][i] & (1 << k)) {
+									Printf("Hidden Pair(%d,%d) Row    [R%dC%d] == %d\n", i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
+									bittable[j][i] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if ((c2 == 2) && (tmp2 == bits)) {	// 列
+					for (int i = 0; i < 9; i++) {
+						if (bittable[i][j] & bits) {
+							for (int k = 0; k < 9; k++) {
+								if ((k == i1) || (k == i2)) {
+									continue;
+								}
+								if (bittable[i][j] & (1 << k)) {
+									Printf("Hidden Pair(%d,%d) Column [R%dC%d] == %d\n", i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
+									bittable[i][j] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if ((c3 == 2) && (tmp3 == bits)) {	// BOX
+					for (int i = 0; i < 9; i++) {
+						if (bittable[by + i / 3][bx + i % 3] & bits) {
+							for (int k = 0; k < 9; k++) {
+								if ((k == i1) || (k == i2)) {
+									continue;
+								}
+								if (bittable[by + i / 3][bx + i % 3] & (1 << k)) {
+									Printf("Hidden Pair(%d,%d) Box    [R%dC%d] == %d\n", i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
+									bittable[by + i / 3][bx + i % 3] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if (count) {
+					return count;
+				}
+			}
+		}
+	}
+	return count;
+}
+
+// @biref 二国同盟(NakedPair)を調べます。
+// @return 候補を削除できた数
+int View::AnalyzeNakedPair() {
+	int count = 0;
+	// 行または列でスキャンします。
+	for (int j = 0; j < 9; j++) {
+		int bx = j % 3 * 3;
+		int by = j / 3 * 3;
+		for (int i1 = 1; i1 < 9; i1++) {		// 上位ビット
+			for (int i2 = 0; i2 < i1; i2++) {	// 下位ビット
+				int bits = (1 << i1) | (1 << i2);	// 調べるビットパターン
+				int c1 = 0, c2 = 0, c3 = 0;	// 見つかった数
+				int tmp1 = 0, tmp2 = 0, tmp3 = 0;	// 見つかったパターンのOR
+				for (int i = 0; i < 9; i++) {
+					if ((bittable[j][i] & bits) && !(bittable[j][i] & ~bits)) {	// 行
+						tmp1 |= bittable[j][i] & bits;
+						c1++;
+					}
+					if ((bittable[i][j] & bits) && !(bittable[i][j] & ~bits)) {	// 列
+						tmp2 |= bittable[i][j] & bits;
+						c2++;
+					}
+					if ((bittable[by + i / 3][bx + i % 3] & bits) && !(bittable[by + i / 3][bx + i % 3] & ~bits)) {		// BOX
+						tmp3 |= bittable[by + i / 3][bx + i % 3] & bits;
+						c3++;
+					}
+				}
+				if ((c1 == 2) && (tmp1 == bits)) {
+					for (int i = 0; i < 9; i++) {
+						if ((bittable[j][i] & bits) && (bittable[j][i] & ~bits)) {
+							for (int k = 0; k < 9; k++) {
+								if ((k != i1) && (k != i2)) {
+									continue;
+								}
+								if (bittable[j][i] & (1 << k)) {
+									Printf("Naked Pair(%d,%d) Row    [R%dC%d] == %d\n", i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
+									bittable[j][i] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if ((c2 == 2) && (tmp2 == bits)) {
+					for (int i = 0; i < 9; i++) {
+						if ((bittable[i][j] & bits) && (bittable[i][j] & ~bits)) {
+							for (int k = 0; k < 9; k++) {
+								if ((k != i1) && (k != i2)) {
+									continue;
+								}
+								if (bittable[i][j] & (1 << k)) {
+									Printf("Naked Pair(%d,%d) Column [R%dC%d] == %d\n", i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
+									bittable[i][j] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if ((c3 == 2) && (tmp3 == bits)) {
+					for (int i = 0; i < 9; i++) {
+						if ((bittable[by + i / 3][bx + i % 3] & bits) && (bittable[by + i / 3][bx + i % 3] & ~bits)) {
+							for (int k = 0; k < 9; k++) {
+								if ((k != i1) && (k != i2)) {
+									continue;
+								}
+								if (bittable[by + i / 3][bx + i % 3] & (1 << k)) {
+									Printf("Naked Pair(%d,%d) Box    [R%dC%d] == %d\n", i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
+									bittable[by + i / 3][bx + i % 3] &= ~(1 << k);
+									count++;
+								}
+							}
+						}
+					}
+				}
+				if (count) {
+					return count;
 				}
 			}
 		}
