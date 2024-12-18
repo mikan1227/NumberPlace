@@ -15,9 +15,6 @@
 // Definitions
 // -----------------------------------------------------------------------------
 
-using std::cout;
-using std::endl;
-
 #define DEFAULT_DPI		96			// デフォルトのDPI
 #define DEFAULT_WIDTH	1200		// デフォルトウィンドウ幅
 #define DEFAULT_HEIGHT	900			// デフォルトウィンドウ高さ
@@ -57,7 +54,13 @@ using std::endl;
 #define RGB_COMPLETE	RGB_LYCYAN		// 完成マスの背景色
 #define RGB_NUMBER		RGB_BLACK		// 数字の文字色
 #define RGB_SMLNUMBER	RGB_SILVER		// 小さい数字の文字色
-#define RGB_CURSOR		RGB_BLUE		// カーソルの色
+#define RGB_CURSOR		RGB_RED			// カーソルの色
+#define RGB_BTNLINE		RGB_BLACK		// ボタン枠線
+#define RGB_BTNLINE2	RGB_GLAY		// ボタン枠線
+#define RGB_BTNBK		RGB_SILVER		// ボタンの背景色
+#define RGB_BTNBK2		RGB_GLAY		// ボタンの背景色2
+#define RGB_BTNFONT		RGB_BLACK		// ボタンの文字色
+#define RGB_BTNFONT2	RGB_SILVER		// ボタンの文字色2
 
 #define LINE_WIDTH		1	// 細線の幅
 #define LINEB_WIDTH		3	// 太線の幅
@@ -65,7 +68,20 @@ using std::endl;
 
 #define FULLBIT			0x01FF	// ビットテーブルの初期状態(フルビット)
 
+#define BTN_CLEAR_TEXT	TEXT("Clear")
+#define BTN_LOAD_TEXT	TEXT("Load")
+#define BTN_SAVE_TEXT	TEXT("Save")
+#define BTN_ANALYZE_TEXT	TEXT("Analyze")
+#define BTN_PREV_TEXT	TEXT("Prev")
+#define BTN_NEXT_TEXT	TEXT("Next")
+
+#define IDM_CLEAR			1
+#define IDM_LOAD			2
+#define IDM_SAVE			3
+#define IDM_ANALYZE			4
+#define IDM_PREV			5
+#define IDM_NEXT			6
+
 // -----------------------------------------------------------------------------
 // Declarations
 // -----------------------------------------------------------------------------
-

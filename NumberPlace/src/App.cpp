@@ -34,7 +34,7 @@ App::App() {
     hInst = GetModuleHandle(nullptr);
 }
 
-// @brief Appクラスのインストラクタです。
+// @brief Appクラスのデストラクタです。
 App::~App() {
     if (pView) {
         delete pView;
@@ -144,11 +144,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_LBUTTONDOWN:
         DebugPrintf("WM_LBUTTONDOWN\n");
-        pView->OnLButtonDown(hWnd, (int)wParam, LOWORD(lParam), LOWORD(lParam));
+        pView->OnLButtonDown(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
         break;
     case WM_RBUTTONDOWN:
         DebugPrintf("WM_RBUTTONDOWN\n");
-        pView->OnRButtonDown(hWnd, (int)wParam, LOWORD(lParam), LOWORD(lParam));
+        pView->OnRButtonDown(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
+        break;
+    case WM_MOUSEMOVE:
+        DebugPrintf("WM_MOUSEMOVE\n");
+        pView->OnMouseMove(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
+        break;
+    case WM_COMMAND:
+        DebugPrintf("WM_COMMAND\n");
+        pView->OnCommand(hWnd, LOWORD(wParam));
         break;
     case WM_KEYDOWN:
         DebugPrintf("WM_KEYDOWN\n");

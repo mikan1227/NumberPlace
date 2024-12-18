@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="inc\App.h" />
     <ClInclude Include="inc\application.h" />
+    <ClInclude Include="inc\Button.h" />
     <ClInclude Include="inc\framework.h" />
     <ClInclude Include="inc\Gdc.h" />
     <ClInclude Include="inc\pch.h" />
@@ -166,6 +167,7 @@
   <ItemGroup>
     <ClCompile Include="src\analyze.cpp" />
     <ClCompile Include="src\App.cpp" />
+    <ClCompile Include="src\Button.cpp" />
     <ClCompile Include="src\Gdc.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pch.cpp">

@@ -30,5 +30,4 @@
 // Declarations
 // -----------------------------------------------------------------------------
 
-void debugprintf(const char* format, ...);
-
+void debugprintf(const char *format, ...);

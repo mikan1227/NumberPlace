@@ -1,6 +1,6 @@
 /*******************************************************************************
- * File : utility.cpp
- * Breif : ユーティリティ関連のソースファイルです。
+ * File : Button.h
+ * Breif : Buttonクラスのヘッダーファイルです。
  * Copyright (c) 2024 mikan-orange
  * This software is released under the MIT License, see LICENSE.
  ******************************************************************************/
@@ -10,32 +10,36 @@
 // -----------------------------------------------------------------------------
 // Includes
 // -----------------------------------------------------------------------------
-
 #include "pch.h"
-#include "stdarg.h"
 
 // -----------------------------------------------------------------------------
 // Definitions
 // -----------------------------------------------------------------------------
 
-#define DBG_LEN	128	// デバッグ出力バッファの長さ
+#define BTN_TEXT_MAX_LEN	10
 
 // -----------------------------------------------------------------------------
 // Declarations
 // -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Functions
-// -----------------------------------------------------------------------------
+// Buttonクラスの宣言です。
+class Button {
+private:
+	RECT rect;
+	BOOL bEnabled;
+	BOOL bHovered;
+	TCHAR str[BTN_TEXT_MAX_LEN];
+	int id;
 
-// @brief デバッグ文字列出力関数です。
-// @param format フォーマット文
-// @param ... 可変個の引数
-void debugprintf(const char* format, ...) {
-	va_list ap;
-	va_start(ap, format);
-	char str[DBG_LEN] = {};
-	vsprintf_s(str, format, ap);
-	std::cout << str;
-	va_end(ap);
-}
+public:
+	Button(int id, const TCHAR* str);
+	~Button();
+	RECT* GetRect();
+	TCHAR* GetText();
+	void Enable(BOOL bEnable);
+	void UnHovered();
+	BOOL IsEnabled();
+	BOOL OnMouseMove(HWND hWnd, int x, int y);
+	BOOL IsHovered();
+	BOOL OnLButtonDown(HWND hWnd, int x, int y);
+};
