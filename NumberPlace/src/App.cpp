@@ -101,7 +101,7 @@ ATOM App::AppRegisterClass() {
     wcex.hInstance = hInst;
     wcex.hIcon = LoadIcon(hInst, IDI_APPLICATION);
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.hbrBackground = nullptr;
     wcex.lpszMenuName = nullptr;
     wcex.lpszClassName = WINCLASS_NAME;
     wcex.hIconSm = LoadIcon(hInst, IDI_APPLICATION);

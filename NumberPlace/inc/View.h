@@ -18,9 +18,12 @@
 // Declarations
 // -----------------------------------------------------------------------------
 
-class History {
+struct History {
+public:
 	History* prev;
 	History* next;
+	char x;
+	char y;
 	char oldNum;
 	char newNum;
 };
@@ -46,6 +49,8 @@ private:
 	Button* pBtnAnalyze;	// Analyzeボタン
 	Button* pBtnPrev;		// Prevボタン
 	Button* pBtnNext;		// Nextボタン
+	History history;		// 履歴
+	History* pHistory;		// 履歴へのポインタ
 
 public:
 	View();
@@ -76,6 +81,8 @@ private:
 
 	void Load(HWND hWnd, TCHAR* filename);
 	void Save(HWND hWnd, TCHAR* filename);
+
+	void AddHistory(HWND hWnd, int old);
 
 	BOOL SetNumber(int num);
 	void ScanSimple(BOOL bClear);
