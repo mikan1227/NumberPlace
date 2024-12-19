@@ -28,7 +28,7 @@
 // @brief Viewクラスのインストラクタです。
 View::View() :
 	pGdc(), bRedraw(TRUE), bBtnRedraw(), bCaptured(), dpi(), len(), basex(), basey(), cursor_x(), cursor_y(), dbgflag(),
-	pBtnClear(), pBtnLoad(), pBtnSave(), pBtnAnalyze(), pBtnPrev(), pBtnNext() {
+	pBtnClear(), pBtnLoad(), pBtnSave(), pBtnAnalyze(), pBtnPrev(), pBtnNext(), history(), pHistory(&history) {
 	ZeroMemory(rectCell, sizeof(rectCell));
 	ZeroMemory(table, sizeof(table));
 	for (int j = 0; j < 9; j++) {
@@ -74,6 +74,14 @@ View::~View() {
 		delete pBtnNext;
 		pBtnNext = nullptr;
 	}
+	History* p = history.next;
+	History* next = nullptr;
+	while (p) {
+		next = p->next;
+		delete p;
+		p = next;
+	}
+	history.next = nullptr;
 }
 
 // @brief WM_CREATEのメッセージハンドラです。
@@ -269,7 +277,9 @@ void View::OnKeyDown(HWND hWnd, int key) {
 	case VK_NUMPAD9:
 		{
 			int num = key - VK_NUMPAD0;
+			int old = table[cursor_y][cursor_x];
 			bRedraw |= SetNumber(num);
+			AddHistory(hWnd, old);
 		}
 		break;
 	case '0':
@@ -284,7 +294,9 @@ void View::OnKeyDown(HWND hWnd, int key) {
 	case '9':
 		{
 			int num = key - '0';
+			int old = table[cursor_y][cursor_x];
 			bRedraw |= SetNumber(num);
+			AddHistory(hWnd, old);
 		}
 		break;
 	}
@@ -346,8 +358,24 @@ void View::OnCommand(HWND hWnd, WORD id) {
 		InvalidateRect(hWnd, nullptr, FALSE);
 		break;
 	case IDM_PREV:
+		{
+			cursor_x = pHistory->x;
+			cursor_y = pHistory->y;
+			SetNumber(pHistory->oldNum);
+			pHistory = pHistory->prev;
+			bRedraw |= TRUE;
+			InvalidateRect(hWnd, nullptr, FALSE);
+		}
 		break;
 	case IDM_NEXT:
+		{
+			pHistory = pHistory->next;
+			cursor_x = pHistory->x;
+			cursor_y = pHistory->y;
+			SetNumber(pHistory->newNum);
+			bRedraw |= TRUE;
+			InvalidateRect(hWnd, nullptr, FALSE);
+		}
 		break;
 	}
 }
@@ -616,6 +644,15 @@ void View::DrawCursor(HWND hWnd, HDC hdc) {
 // @param hWnd ウィンドウハンドル
 // @param hdc DCのハンドル
 void View::DrawButtons(HWND hWnd, HDC hdc) {
+	if (pHistory->prev)
+		pBtnPrev->Enable(TRUE);
+	else
+		pBtnPrev->Enable(FALSE);
+	if (pHistory->next)
+		pBtnNext->Enable(TRUE);
+	else
+		pBtnNext->Enable(FALSE);
+
 	DrawButton(hWnd, hdc, pBtnClear);
 	DrawButton(hWnd, hdc, pBtnLoad);
 	DrawButton(hWnd, hdc, pBtnSave);
@@ -715,4 +752,31 @@ void View::Save(HWND hWnd, TCHAR* filename) {
 	ScanSimple(TRUE);
 	bRedraw |= TRUE;
 	InvalidateRect(hWnd, nullptr, FALSE);
+}
+
+// @brief 履歴に追加します。
+// @param hWnd ウィンドウハンドル
+// @param old 前の数字
+void View::AddHistory(HWND hWnd, int old) {
+	if (pHistory->next) {
+		History* p = pHistory->next;
+		History* next = nullptr;
+		while (p) {
+			next = p->next;
+			delete p;
+			p = next;
+		}
+	}
+	pHistory->next = new History();
+	if (pHistory->next == nullptr) {
+		DestroyWindow(hWnd);
+		return;
+	}
+	pHistory->next->prev = pHistory;
+	pHistory = pHistory->next;
+	pHistory->next = nullptr;
+	pHistory->x = (char)cursor_x;
+	pHistory->y = (char)cursor_y;
+	pHistory->oldNum = (char)old;
+	pHistory->newNum = table[cursor_y][cursor_x];
 }
