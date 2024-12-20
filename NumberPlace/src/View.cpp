@@ -82,6 +82,7 @@ View::~View() {
 		p = next;
 	}
 	history.next = nullptr;
+	pHistory = &history;
 }
 
 // @brief WM_CREATEのメッセージハンドラです。
@@ -315,6 +316,15 @@ void View::OnCommand(HWND hWnd, WORD id) {
 			int ret = MessageBox(hWnd, TEXT("Clear?"), TEXT("Confirmation"), MB_ICONQUESTION | MB_OKCANCEL);
 			if (ret == IDOK) {
 				ZeroMemory(table, sizeof(table));
+				History* p = history.next;
+				History* next = nullptr;
+				while (p) {
+					next = p->next;
+					delete p;
+					p = next;
+				}
+				history.next = nullptr;
+				pHistory = &history;
 				ScanSimple(TRUE);
 				bRedraw |= TRUE;
 				InvalidateRect(hWnd, nullptr, FALSE);
