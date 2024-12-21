@@ -18,6 +18,8 @@
 #define DEFAULT_DPI		96			// デフォルトのDPI
 #define DEFAULT_WIDTH	1200		// デフォルトウィンドウ幅
 #define DEFAULT_HEIGHT	900			// デフォルトウィンドウ高さ
+#define CLIENT_X		135			// クライアント領域の比率
+#define CLIENT_Y		100			// クライアント領域の比率
 #define MAX_APPSTRING	128			// 文字列の長さ
 #define WINCLASS_NAME	TEXT("NumberPlaceClass")	// ウィンドウクラス名
 #define WINDOW_TITLE	TEXT("Number Place")		// ウィンドウタイトル

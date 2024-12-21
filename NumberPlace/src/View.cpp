@@ -444,12 +444,12 @@ void View::CalcPosition(HWND hWnd, RECT* pRect) {
 	int cx = pRect->right - pRect->left;
 	int cy = pRect->bottom - pRect->top;
 	if (cx < cy) {
-		cy = cx * DEFAULT_HEIGHT / DEFAULT_WIDTH;
-		basey = (pRect->bottom - cy) / 2;
+		cy = cx * CLIENT_Y / CLIENT_X;
+		basey = (pRect->bottom - pRect->top - cy) / 2;
 	}
 	else {
-		cx = cy * DEFAULT_WIDTH / DEFAULT_HEIGHT;
-		basex = (pRect->right - cx) / 2;
+		cx = cy * CLIENT_X / CLIENT_Y;
+		basex = (pRect->right - pRect->left - cx) / 2;
 	}
 	len = cy / 10;
 	for (int j = 0; j < 9; j++) {
@@ -460,46 +460,46 @@ void View::CalcPosition(HWND hWnd, RECT* pRect) {
 			rectCell[j][i].bottom = basey + len / 2 + len * (j + 1);
 		}
 	}
-	int btnx = basex + len / 2 + len * 10;
-	int btny = basey + len / 2;
+
 	int btncx = len * 3;
 	int btncy = len;
-	int bx = (cx - len / 2 - btnx - btncx) / 2;
+	int btnx = basex + cx - len / 2 - btncx;
+	int btny = basey + len / 2;
 
 	RECT* pBtnRect = pBtnClear->GetRect();
-	pBtnRect->left = btnx + bx;
+	pBtnRect->left = btnx;
 	pBtnRect->top = btny;
-	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->right = btnx+ btncx;
 	pBtnRect->bottom = btny + btncy;
 
 	pBtnRect = pBtnLoad->GetRect();
-	pBtnRect->left = btnx + bx;
+	pBtnRect->left = btnx;
 	pBtnRect->top = btny + len;
-	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->right = btnx + btncx;
 	pBtnRect->bottom = btny + len + btncy;
 
 	pBtnRect = pBtnSave->GetRect();
-	pBtnRect->left = btnx + bx;
+	pBtnRect->left = btnx;
 	pBtnRect->top = btny + len * 2;
-	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->right = btnx+ btncx;
 	pBtnRect->bottom = btny + len * 2 + btncy;
 
 	pBtnRect = pBtnAnalyze->GetRect();
-	pBtnRect->left = btnx + bx;
+	pBtnRect->left = btnx;
 	pBtnRect->top = btny + len * 3;
-	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->right = btnx + btncx;
 	pBtnRect->bottom = btny + len * 3 + btncy;
 
 	pBtnRect = pBtnPrev->GetRect();
-	pBtnRect->left = btnx + bx;
+	pBtnRect->left = btnx;
 	pBtnRect->top = btny + len * 4;
-	pBtnRect->right = btnx + bx + btncx / 2;
+	pBtnRect->right = btnx + btncx / 2;
 	pBtnRect->bottom = btny + len * 4 + btncy;
 
 	pBtnRect = pBtnNext->GetRect();
-	pBtnRect->left = btnx + bx + btncx / 2;
+	pBtnRect->left = btnx+ btncx / 2;
 	pBtnRect->top = btny + len * 4;
-	pBtnRect->right = btnx + bx + btncx;
+	pBtnRect->right = btnx + btncx;
 	pBtnRect->bottom = btny + len * 4 + btncy;
 }
 
