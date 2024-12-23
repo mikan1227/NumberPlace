@@ -120,7 +120,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CREATE:
-        DebugPrintf("WM_CREATE\n");
+        //DebugPrintf("WM_CREATE\n");
         {
             int ret = -1;   // ˆÙíI—¹
             pView = new View();
@@ -131,39 +131,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_SIZING:
-        DebugPrintf("WM_SIZING\n");
+        //DebugPrintf("WM_SIZING\n");
         pView->OnSizing(hWnd, (RECT*)lParam);
         break;
     case WM_SIZE:
-        DebugPrintf("WM_SIZE\n");
+        //DebugPrintf("WM_SIZE\n");
         pView->OnSize(hWnd);
         break;
     case WM_DPICHANGED:
-        DebugPrintf("WM_DPICHANGED\n");
+        //DebugPrintf("WM_DPICHANGED\n");
         pView->OnDpiChanged(hWnd, LOWORD(wParam), (RECT*)lParam);
         break;
     case WM_LBUTTONDOWN:
-        DebugPrintf("WM_LBUTTONDOWN\n");
+        //DebugPrintf("WM_LBUTTONDOWN\n");
         pView->OnLButtonDown(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
         break;
     case WM_RBUTTONDOWN:
-        DebugPrintf("WM_RBUTTONDOWN\n");
+        //DebugPrintf("WM_RBUTTONDOWN\n");
         pView->OnRButtonDown(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
         break;
     case WM_MOUSEMOVE:
-        DebugPrintf("WM_MOUSEMOVE\n");
+        //DebugPrintf("WM_MOUSEMOVE\n");
         pView->OnMouseMove(hWnd, (int)wParam, LOWORD(lParam), HIWORD(lParam));
         break;
     case WM_COMMAND:
-        DebugPrintf("WM_COMMAND\n");
+        //DebugPrintf("WM_COMMAND\n");
         pView->OnCommand(hWnd, LOWORD(wParam));
         break;
     case WM_KEYDOWN:
-        DebugPrintf("WM_KEYDOWN\n");
+        //DebugPrintf("WM_KEYDOWN\n");
         pView->OnKeyDown(hWnd, (int)wParam);
         break;
     case WM_PAINT:
-        DebugPrintf("WM_PAINT\n");
+        //DebugPrintf("WM_PAINT\n");
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
