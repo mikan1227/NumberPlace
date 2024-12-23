@@ -91,4 +91,6 @@ private:
 	int AnalyzeLocked2();
 	int AnalyzeHiddenPair();
 	int AnalyzeNakedPair();
+	int AnalyzeHiddenTriple();
+	int AnalyzeNakedTriple();
 };
