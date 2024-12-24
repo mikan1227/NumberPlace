@@ -111,6 +111,10 @@ void View::Analyze(HWND hWnd) {
 		if (ret) break;
 		ret = AnalyzeNakedTriple();
 		if (ret) break;
+		ret = AnalyzeHiddenQuadruple();
+		if (ret) break;
+		ret = AnalyzeNakedQuadruple();
+		if (ret) break;
 		break;
 	}
 	ScanSimple(FALSE);
@@ -525,8 +529,8 @@ int View::AnalyzeNakedTriple() {
 	for (int j = 0; j < 9; j++) {
 		int bx = j % 3 * 3;
 		int by = j / 3 * 3;
-		for (int i1 = 1; i1 < 9; i1++) {		// 上位ビット
-			for (int i2 = 0; i2 < i1; i2++) {	// 中位ビット
+		for (int i1 = 2; i1 < 9; i1++) {		// 上位ビット
+			for (int i2 = 1; i2 < i1; i2++) {	// 中位ビット
 				for (int i3 = 0; i3 < i2; i3++) {	// 下位ビット
 					int bits = (1 << i1) | (1 << i2) | (1 << i3);	// 調べるビットパターン
 					int c1 = 0, c2 = 0, c3 = 0;	// 見つかった数
@@ -553,7 +557,7 @@ int View::AnalyzeNakedTriple() {
 										continue;
 									}
 									if (bittable[j][i] & (1 << k)) {
-										Printf("Naked Pair(%d,%d,%d) Row    [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
+										Printf("Naked Triple(%d,%d,%d) Row    [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
 										bittable[j][i] &= ~(1 << k);
 										count++;
 									}
@@ -569,7 +573,7 @@ int View::AnalyzeNakedTriple() {
 										continue;
 									}
 									if (bittable[i][j] & (1 << k)) {
-										Printf("Naked Pair(%d,%d,%d) Column [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
+										Printf("Naked Triple(%d,%d,%d) Column [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
 										bittable[i][j] &= ~(1 << k);
 										count++;
 									}
@@ -585,7 +589,7 @@ int View::AnalyzeNakedTriple() {
 										continue;
 									}
 									if (bittable[by + i / 3][bx + i % 3] & (1 << k)) {
-										Printf("Naked Pair(%d,%d,%d) Box    [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
+										Printf("Naked Triple(%d,%d,%d) Box    [R%dC%d] == %d\n", i3 + 1, i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
 										bittable[by + i / 3][bx + i % 3] &= ~(1 << k);
 										count++;
 									}
@@ -595,6 +599,182 @@ int View::AnalyzeNakedTriple() {
 					}
 					if (count) {
 						return count;
+					}
+				}
+			}
+		}
+	}
+	return count;
+}
+
+// @biref 四国同盟(HiddenQuadruple)を調べます。
+// @return 候補を削除できた数
+int View::AnalyzeHiddenQuadruple() {
+	int count = 0;
+	// 行または列でスキャンします。
+	for (int j = 0; j < 9; j++) {
+		int bx = j % 3 * 3;
+		int by = j / 3 * 3;
+		for (int i1 = 3; i1 < 9; i1++) {		// 上位ビット
+			for (int i2 = 2; i2 < i1; i2++) {	// 中上位ビット
+				for (int i3 = 1; i3 < i2; i3++) {	// 中下位ビット
+					for (int i4 = 0; i4 < i3; i4++) {	// 下位ビット
+						int bits = (1 << i1) | (1 << i2) | (1 << i3) | (1 << i4);	// 調べるビットパターン
+						int c1 = 0, c2 = 0, c3 = 0;	// 見つかった数
+						int tmp1 = 0, tmp2 = 0, tmp3 = 0;	// 見つかったパターンのOR
+						for (int i = 0; i < 9; i++) {
+							if (bittable[j][i] & bits) {	// 行
+								c1++;
+								tmp1 |= (bittable[j][i] & bits);
+							}
+							if (bittable[i][j] & bits) {	// 列
+								c2++;
+								tmp2 |= bittable[i][j] & bits;
+							}
+							if (bittable[by + i / 3][bx + i % 3] & bits) {		// BOX
+								c3++;
+								tmp3 |= bittable[by + i / 3][bx + i % 3] & bits;
+							}
+						}
+						if ((c1 == 4) && (tmp1 == bits)) {	// 行
+							for (int i = 0; i < 9; i++) {
+								if (bittable[j][i] & bits) {
+									for (int k = 0; k < 9; k++) {
+										if ((k == i1) || (k == i2) || (k == i3) || (k == i4)) {
+											continue;
+										}
+										if (bittable[j][i] & (1 << k)) {
+											Printf("Hidden Quadruple(%d,%d,%d,%d) Row    [R%dC%d] = %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
+											bittable[j][i] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if ((c2 == 4) && (tmp2 == bits)) {	// 列
+							for (int i = 0; i < 9; i++) {
+								if (bittable[i][j] & bits) {
+									for (int k = 0; k < 9; k++) {
+										if ((k == i1) || (k == i2) || (k == i3) || (k == i4)) {
+											continue;
+										}
+										if (bittable[i][j] & (1 << k)) {
+											Printf("Hidden Quadruple(%d,%d,%d,%d) Column [R%dC%d] = %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
+											bittable[i][j] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if ((c3 == 4) && (tmp3 == bits)) {	// BOX
+							for (int i = 0; i < 9; i++) {
+								if (bittable[by + i / 3][bx + i % 3] & bits) {
+									for (int k = 0; k < 9; k++) {
+										if ((k == i1) || (k == i2) || (k == i3) || (k == i4)) {
+											continue;
+										}
+										if (bittable[by + i / 3][bx + i % 3] & (1 << k)) {
+											Printf("Hidden Quadruple(%d,%d,%d,%d) Box    [R%dC%d] = %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
+											bittable[by + i / 3][bx + i % 3] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if (count) {
+							return count;
+						}
+					}
+				}
+			}
+		}
+	}
+	return count;
+}
+
+// @biref 四国同盟(NakedQuadruple)を調べます。
+// @return 候補を削除できた数
+int View::AnalyzeNakedQuadruple() {
+	int count = 0;
+	// 行または列でスキャンします。
+	for (int j = 0; j < 9; j++) {
+		int bx = j % 3 * 3;
+		int by = j / 3 * 3;
+		for (int i1 = 3; i1 < 9; i1++) {		// 上位ビット
+			for (int i2 = 2; i2 < i1; i2++) {	// 中上位ビット
+				for (int i3 = 1; i3 < i2; i3++) {	// 中下位ビット
+					for (int i4 = 0; i4 < i3; i4++) {	// 下位ビット
+						int bits = (1 << i1) | (1 << i2) | (1 << i3) | (1 << i4);	// 調べるビットパターン
+						int c1 = 0, c2 = 0, c3 = 0;	// 見つかった数
+						int tmp1 = 0, tmp2 = 0, tmp3 = 0;	// 見つかったパターンのOR
+						for (int i = 0; i < 9; i++) {
+							if ((bittable[j][i] & bits) && !(bittable[j][i] & ~bits)) {	// 行
+								tmp1 |= bittable[j][i] & bits;
+								c1++;
+							}
+							if ((bittable[i][j] & bits) && !(bittable[i][j] & ~bits)) {	// 列
+								tmp2 |= bittable[i][j] & bits;
+								c2++;
+							}
+							if ((bittable[by + i / 3][bx + i % 3] & bits) && !(bittable[by + i / 3][bx + i % 3] & ~bits)) {		// BOX
+								tmp3 |= bittable[by + i / 3][bx + i % 3] & bits;
+								c3++;
+							}
+						}
+						if ((c1 == 4) && (tmp1 == bits)) {
+							for (int i = 0; i < 9; i++) {
+								if ((bittable[j][i] & bits) && (bittable[j][i] & ~bits)) {
+									for (int k = 0; k < 9; k++) {
+										if ((k != i1) && (k != i2) && (k != i3) && (k != i4)) {
+											continue;
+										}
+										if (bittable[j][i] & (1 << k)) {
+											Printf("Naked Quadruple(%d,%d,%d,%d) Row    [R%dC%d] == %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, j + 1, i + 1, k + 1);
+											bittable[j][i] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if ((c2 == 4) && (tmp2 == bits)) {
+							for (int i = 0; i < 9; i++) {
+								if ((bittable[i][j] & bits) && (bittable[i][j] & ~bits)) {
+									for (int k = 0; k < 9; k++) {
+										if ((k != i1) && (k != i2) && (k != i3) && (k != i4)) {
+											continue;
+										}
+										if (bittable[i][j] & (1 << k)) {
+											Printf("Naked Quadruple(%d,%d,%d,%d) Column [R%dC%d] == %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, i + 1, j + 1, k + 1);
+											bittable[i][j] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if ((c3 == 4) && (tmp3 == bits)) {
+							for (int i = 0; i < 9; i++) {
+								if ((bittable[by + i / 3][bx + i % 3] & bits) && (bittable[by + i / 3][bx + i % 3] & ~bits)) {
+									for (int k = 0; k < 9; k++) {
+										if ((k != i1) && (k != i2) && (k != i3) && (k != i4)) {
+											continue;
+										}
+										if (bittable[by + i / 3][bx + i % 3] & (1 << k)) {
+											Printf("Naked Quadruple(%d,%d,%d,%d) Box    [R%dC%d] == %d\n", i4 + 1, i3 + 1, i2 + 1, i1 + 1, by + i / 3 + 1, bx + i % 3 + 1, k + 1);
+											bittable[by + i / 3][bx + i % 3] &= ~(1 << k);
+											count++;
+										}
+									}
+								}
+							}
+						}
+						if (count) {
+							return count;
+						}
 					}
 				}
 			}

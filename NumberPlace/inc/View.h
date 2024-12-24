@@ -93,4 +93,6 @@ private:
 	int AnalyzeNakedPair();
 	int AnalyzeHiddenTriple();
 	int AnalyzeNakedTriple();
+	int AnalyzeHiddenQuadruple();
+	int AnalyzeNakedQuadruple();
 };

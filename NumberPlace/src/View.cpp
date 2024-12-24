@@ -323,6 +323,8 @@ void View::OnCommand(HWND hWnd, WORD id) {
 					delete p;
 					p = next;
 				}
+				cursor_x = 0;
+				cursor_y = 0;
 				history.next = nullptr;
 				pHistory = &history;
 				ScanSimple(TRUE);
