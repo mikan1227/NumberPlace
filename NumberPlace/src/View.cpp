@@ -717,6 +717,17 @@ void View::Load(HWND hWnd, TCHAR* filename) {
 		return;
 	}
 	ZeroMemory(table, sizeof(table));
+	History* p = history.next;
+	History* next = nullptr;
+	while (p) {
+		next = p->next;
+		delete p;
+		p = next;
+	}
+	cursor_x = 0;
+	cursor_y = 0;
+	history.next = nullptr;
+	pHistory = &history;
 	for (int j = 0; j < 9; j++) {
 		for (int i = 0; i < 9; i++) {
 			while (1) {
