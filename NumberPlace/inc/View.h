@@ -95,4 +95,8 @@ private:
 	int AnalyzeNakedTriple();
 	int AnalyzeHiddenQuadruple();
 	int AnalyzeNakedQuadruple();
+	int AnalyzeXWing();
+
+	int RemoveFromRow(int x1, int x2, int y, int num);
+	int RemoveFromColumn(int x, int y1, int y2, int num);
 };

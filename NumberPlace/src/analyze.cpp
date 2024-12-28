@@ -115,6 +115,8 @@ void View::Analyze(HWND hWnd) {
 		if (ret) break;
 		ret = AnalyzeNakedQuadruple();
 		if (ret) break;
+		ret = AnalyzeXWing();
+		if (ret) break;
 		break;
 	}
 	ScanSimple(FALSE);
@@ -777,6 +779,97 @@ int View::AnalyzeNakedQuadruple() {
 						}
 					}
 				}
+			}
+		}
+	}
+	return count;
+}
+
+// @biref X-Wingを調べます。
+// @return 候補を削除できた数
+int View::AnalyzeXWing() {
+	int count = 0;
+	for (int num = 0; num < 9; num++) {
+		int count1[9] = {}, count2[9] = {};
+		int row[9][2] = {}, col[9][2] = {};
+		for (int j = 0; j < 9; j++) {
+			for (int i = 0; i < 9; i++) {
+				if (bittable[j][i] & (1 << num)) {
+					count1[j]++;
+					if (count1[j] <= 2) {
+						col[j][count1[j] - 1] = i;
+					}
+				}
+				if (bittable[i][j] & (1 << num)) {
+					count2[j]++;
+					if (count2[j] <= 2) {
+						row[j][count2[j] - 1] = i;
+					}
+				}
+			}
+		}
+		for (int i1 = 0; i1 < 6; i1++) {
+			if ((count1[i1] == 2) && ((col[i1][0] / 3) != (col[i1][1] / 3))) {
+				for (int i2 = (i1 / 3 + 1) * 3; i2 < 9; i2++) {
+					if (count1[i2] == 2) {
+						if ((col[i1][0] == col[i2][0]) && (col[i1][1] == col[i2][1])) {
+							Printf("X-Wing [R%dC%d],[R%dC%d],[R%dC%d],[R%dC%d] = %d\n",
+								i1 + 1, col[i1][0] + 1, i1 + 1, col[i1][1] + 1, i2 + 1, col[i2][0] + 1, i2 + 1, col[i2][1] + 1, num + 1);
+							count += RemoveFromColumn(col[i1][0], i1, i2, num);
+							count += RemoveFromColumn(col[i1][1], i1, i2, num);
+						}
+					}
+				}
+			}
+			if ((count2[i1] == 2) && ((row[i1][0] / 3) != (row[i1][1] / 3))) {
+				for (int i2 = (i1 / 3 + 1) * 3; i2 < 9; i2++) {
+					if (count2[i2] == 2) {
+						if ((row[i1][0] == row[i2][0]) && (row[i1][1] == row[i2][1])) {
+							Printf("X-Wing [R%dC%d],[R%dC%d],[R%dC%d],[R%dC%d] = %d\n",
+								row[i1][0] + 1, i1 + 1, row[i1][1] + 1, i1 + 1, row[i2][0] + 1, i2 + 1, row[i2][1] + 1, i2 + 1, num + 1);
+							count += RemoveFromRow(i1, i2, row[i1][0], num);
+							count += RemoveFromRow(i1, i2, row[i1][1], num);
+						}
+					}
+				}
+			}
+		}
+	}
+	return count;
+}
+
+// @brief 行から指定した候補数字を削除します。
+// @param x1, x1 除外座標
+// @param y 行
+// @param num 数字
+// @Return 削除した数
+int View::RemoveFromRow(int x1, int x2, int y, int num) {
+	int count = 0;
+	for (int i = 0; i < 9; i++) {
+		if ((i != x1) && (i != x2)) {
+			if (bittable[y][i] & (1 << num)) {
+				bittable[y][i] &= ~(1 << num);
+				Printf("[R%dC%d] = %d\n", y + 1, i + 1, num + 1);
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
+// @brief 列から指定した候補数字を削除します。
+// @param x 列
+// @param y1, y1 除外座標
+// @param num 数字
+// @Return 削除した数
+int View::RemoveFromColumn(int x, int y1, int y2, int num) {
+	int count = 0;
+	for (int i = 0; i < 9; i++) {
+		if ((i != y1) && (i != y2)) {
+			if (bittable[i][x] & (1 << num)) {
+				bittable[i][x] &= ~(1 << num);
+				Printf("[R%dC%d] = %d\n", i + 1, x + 1, num + 1);
+				count++;
 			}
 		}
 	}
